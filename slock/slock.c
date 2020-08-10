@@ -18,6 +18,7 @@
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <Imlib2.h>
 
 #include "arg.h"
 #include "util.h"
@@ -35,6 +36,7 @@ struct lock {
 	int screen;
 	Window root, win;
 	Pixmap pmap;
+	Pixmap bgmap;
 	unsigned long colors[NUMCOLS];
 };
 
@@ -45,6 +47,8 @@ struct xrandr {
 };
 
 #include "config.h"
+
+Imlib_Image image;
 
 static void
 die(const char *errstr, ...)
@@ -82,6 +86,18 @@ dontkillme(void)
 	}
 }
 #endif
+
+static void
+drawstate(Display *dpy, Window win, unsigned int state, unsigned int len, unsigned long pixel)
+{
+	unsigned int i;
+	XGCValues gr_values;
+	GC gc;
+	gr_values.foreground = pixel;
+	gc = XCreateGC(dpy, win, GCForeground, &gr_values);
+	for (i = 0; i < len; i++)
+		XFillRectangle(dpy, win, gc, (inputXPos + i * 3) * pixelSize, inputYPos * pixelSize, pixelSize * 2, pixelSize * 2);
+}
 
 static const char *
 gethash(void)
@@ -130,15 +146,14 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 {
 	XRRScreenChangeNotifyEvent *rre;
 	char buf[32], passwd[256], *inputhash;
-	int num, screen, running, failure, oldc;
-	unsigned int len, color;
+	int num, screen, running, failure;
+	unsigned int len, oldlen, color;
 	KeySym ksym;
 	XEvent ev;
 
-	len = 0;
+	len = oldlen = 0;
 	running = 1;
 	failure = 0;
-	oldc = INIT;
 
 	while (running && !XNextEvent(dpy, &ev)) {
 		if (ev.type == KeyPress) {
@@ -156,6 +171,8 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 			    IsPFKey(ksym) ||
 			    IsPrivateKeypadKey(ksym))
 				continue;
+			if (!len)
+				failure = 0;
 			switch (ksym) {
 			case XK_Return:
 				passwd[len] = '\0';
@@ -187,16 +204,23 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 				}
 				break;
 			}
+
 			color = len ? INPUT : ((failure || failonclear) ? FAILED : INIT);
-			if (running && oldc != color) {
+			if (color != FAILED)
+				oldlen = len;
+
+			if (running) {
 				for (screen = 0; screen < nscreens; screen++) {
-					XSetWindowBackground(dpy,
-					                     locks[screen]->win,
-					                     locks[screen]->colors[color]);
+					if (locks[screen]->bgmap)
+						XSetWindowBackgroundPixmap(dpy, locks[screen]->win, locks[screen]->bgmap);
+					else
+						XSetWindowBackground(dpy, locks[screen]->win, locks[screen]->colors[color]);
 					XClearWindow(dpy, locks[screen]->win);
+					drawstate(dpy, locks[screen]->win, color, oldlen, locks[screen]->colors[color]);
 				}
-				oldc = color;
+
 			}
+
 		} else if (rr->active && ev.type == rr->evbase + RRScreenChangeNotify) {
 			rre = (XRRScreenChangeNotifyEvent*)&ev;
 			for (screen = 0; screen < nscreens; screen++) {
@@ -235,6 +259,17 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 	lock->screen = screen;
 	lock->root = RootWindow(dpy, lock->screen);
 
+	if (image)  {
+		lock->bgmap = XCreatePixmap(dpy, lock->root, DisplayWidth(dpy, lock->screen), DisplayHeight(dpy, lock->screen), DefaultDepth(dpy, lock->screen));
+		imlib_context_set_image(image);
+		imlib_context_set_display(dpy);
+		imlib_context_set_visual(DefaultVisual(dpy, lock->screen));
+		imlib_context_set_colormap(DefaultColormap(dpy, lock->screen));
+		imlib_context_set_drawable(lock->bgmap);
+		imlib_render_image_on_drawable(0, 0);
+		imlib_free_image();
+	}
+
 	for (i = 0; i < NUMCOLS; i++) {
 		XAllocNamedColor(dpy, DefaultColormap(dpy, lock->screen),
 		                 colorname[i], &color, &dummy);
@@ -251,6 +286,8 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 	                          CopyFromParent,
 	                          DefaultVisual(dpy, lock->screen),
 	                          CWOverrideRedirect | CWBackPixel, &wa);
+	if (lock->bgmap)
+			XSetWindowBackgroundPixmap(dpy, lock->win, lock->bgmap);
 	lock->pmap = XCreateBitmapFromData(dpy, lock->win, curs, 8, 8);
 	invisible = XCreatePixmapCursor(dpy, lock->pmap, lock->pmap,
 	                                &color, &color, 0, 0);
@@ -314,6 +351,8 @@ main(int argc, char **argv) {
 	const char *hash;
 	Display *dpy;
 	int s, nlocks, nscreens;
+	unsigned int x, y;
+	Imlib_Color p;
 
 	ARGBEGIN {
 	case 'v':
@@ -354,6 +393,25 @@ main(int argc, char **argv) {
 		die("slock: setgid: %s\n", strerror(errno));
 	if (setuid(duid) < 0)
 		die("slock: setuid: %s\n", strerror(errno));
+
+	/* create screenshot image */
+	Screen *scr = ScreenOfDisplay(dpy, DefaultScreen(dpy));
+	image = imlib_create_image(scr->width, scr->height);
+	imlib_context_set_image(image);
+	imlib_context_set_display(dpy);
+	imlib_context_set_visual(DefaultVisual(dpy, 0));
+	imlib_context_set_drawable(RootWindow(dpy, XScreenNumberOfScreen(scr)));
+	imlib_copy_drawable_to_image(0, 0, 0, scr->width, scr->height, 0, 0, 1);
+	imlib_image_blur(blurRadius);
+
+	/* pixelation */
+	for (y = 0; y < scr->height; y += pixelSize) {
+		for (x = 0; x < scr->width; x += pixelSize) {
+			imlib_image_query_pixel(x + pixelSize / 2, y + pixelSize / 2, &p);
+			imlib_context_set_color(p.red, p.green, p.blue, 0xff);
+			imlib_image_fill_rectangle(x, y, pixelSize, pixelSize);
+		}
+	}
 
 	/* check for Xrandr support */
 	rr.active = XRRQueryExtension(dpy, &rr.evbase, &rr.errbase);
