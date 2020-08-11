@@ -88,7 +88,7 @@ dontkillme(void)
 #endif
 
 static void
-drawstate(Display *dpy, Window win, unsigned int state, unsigned int len, unsigned long pixel)
+drawstate(Display *dpy, Window win, unsigned int len, unsigned long pixel)
 {
 	unsigned int i;
 	XGCValues gr_values;
@@ -97,6 +97,7 @@ drawstate(Display *dpy, Window win, unsigned int state, unsigned int len, unsign
 	gc = XCreateGC(dpy, win, GCForeground, &gr_values);
 	for (i = 0; i < len; i++)
 		XFillRectangle(dpy, win, gc, (inputXPos + i * 3) * pixelSize, inputYPos * pixelSize, pixelSize * 2, pixelSize * 2);
+	XFreeGC(dpy, gc);
 }
 
 static const char *
@@ -216,7 +217,7 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 					else
 						XSetWindowBackground(dpy, locks[screen]->win, locks[screen]->colors[color]);
 					XClearWindow(dpy, locks[screen]->win);
-					drawstate(dpy, locks[screen]->win, color, oldlen, locks[screen]->colors[color]);
+					drawstate(dpy, locks[screen]->win, oldlen, locks[screen]->colors[color]);
 				}
 
 			}
