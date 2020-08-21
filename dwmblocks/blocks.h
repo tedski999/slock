@@ -14,8 +14,8 @@ static Block blocks[] = {
 /*    pathu                 pathc                            interval  signal */
 	{ PATH("pacman.sh"),    PATH("pacman_button.sh"),        30,       7      },
 	{ PATH("septs.sh"),     PATH("septs_button.sh"),         30,       6      },
-	{ PATH("usage.sh"),     PATH("usage_button.sh"),         5,        5      },
-	{ PATH("network.sh"),   PATH("network_button.sh"),       10,       4      },
+	{ PATH("usage.sh"),     PATH("usage_button.sh"),         2,        5      },
+	{ PATH("network.sh"),   PATH("network_button.sh"),       5,        4      },
 	{ PATH("volume.sh"),    PATH("volume_button.sh"),        0,        3      },
 	{ PATH("battery.sh"),   PATH("battery_button.sh"),       15,       2      },
 	{ PATH("timedate.sh"),  PATH("timedate_button.sh"),      30,       1      },

@@ -785,8 +785,10 @@ void
 xloadalpha(void)
 {
     /* set alpha value of bg color */
-    if (opt_alpha)
+    if (opt_alpha) {
         alpha = strtof(opt_alpha, NULL);
+        alphaUnfocussed = alpha;
+    }
 
     float const usedAlpha = focused ? alpha : alphaUnfocussed;
 
