@@ -7,7 +7,6 @@ static const unsigned int barpadding      = 6;   /* extra padding under bar */
 static const unsigned int gappx           = 6;   /* gaps between windows */
 static const unsigned int snap            = 16;  /* snap pixel */
 static const unsigned int swallowfloating = 0;   /* 1 means swallow floating windows by default */
-static const unsigned int tagwidth        = 25;  /* the size of each tag */
 static const unsigned int tabwidth        = 300; /* the size of each clients tab */
 static const unsigned int underlineWeight = 2;   /* size of line under text */
 static const int showbar                  = 1;   /* 0 means no bar */
