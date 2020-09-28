@@ -1,7 +1,7 @@
 # dwmblocks
 
 Modular status monitor for dwm written in C with features including
-clickability, cursor hinting and color.
+signaling, clickability, cursor hinting and color.
 
 # Usage
 
@@ -9,14 +9,16 @@ clickability, cursor hinting and color.
 
 # Modifying blocks
 
-Blocks are added and removed by editing the `blocks.h` file. Read it for more
-info.
+Blocks are added and removed by editing the [blocks.h](blocks.h) file. Read it
+for more info.
 
 # Colored output and Clickability
 
-The patches folder contains a patch for dwm which is required for dwmblocks to
-function properly. It adds support for colored text, clickability and cursor
-hinting when hovering on text output of clickable blocks (inspired by polybar).
+The patches folder contains two patches for dwm, one for dwm already patched
+with systray patch and the other for dwm without systray. One of the patches,
+whichever appropriate, is essential for dwmblocks to function properly. It will
+add support for colored text, clickability and cursor hinting when hovering on
+clickable blocks (inspired by polybar).
 
 Clickability is inspired by the statuscmd patch for dwm. On clicking on text
 corresponding to a clickable block, the program specified to handle clicks for
@@ -59,5 +61,5 @@ Some ideas and code was taken from other projects. Credits for those go to -
 # See also
 
 * [dsblocks](https://github.com/ashish-yadav11/dsblocks) - A clone of this
-project with the only difference being that C functions instead of external
-programs are used to update blocks and handle clicks.
+  project with the only difference being that C functions instead of external
+  programs are used to update blocks and handle clicks.

@@ -102,15 +102,11 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_l,      setmfact,       {.f = +0.05} },
 
 	/* navigation */
-	{ ALTKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      shiftview,      {.i = -1 } },
 	{ MODKEY,                       XK_l,      shiftview,      {.i = +1 } },
-	{ MODKEY,                       XK_equal,  incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_minus,  incnmaster,     {.i = -1 } },
-	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
@@ -126,7 +122,7 @@ static Key keys[] = {
 	TAGKEYS(                        XK_4,                      3)
 	TAGKEYS(                        XK_5,                      4)
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
-	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
+	{ MODKEY|ShiftMask,             XK_0,      toggleview,     {.ui = ~0 } },
 	{ MODKEY,                       XK_s,      togglesticky,   {0} },
 
 	/* system control */
@@ -148,7 +144,8 @@ static Button buttons[] = {
 	{ ClkClientWin,  MODKEY,     Button2, togglefloating, {0} },
 	{ ClkClientWin,  MODKEY,     Button3, resizemouse,    {0} },
 	{ ClkTagBar,     0,          Button1, view,           {0} },
-	{ ClkTagBar,     ShiftMask,  Button2, shiftview,      {.i = -1 } },
-	{ ClkTagBar,     0,          Button2, shiftview,      {.i = +1 } },
-	{ ClkTagBar,     0,          Button3, toggleview,     {0} },
+	{ ClkTagBar,     ShiftMask,  Button1, toggleview,     {0} },
+	{ ClkTagBar,     ShiftMask,  Button3, shiftview,      {.i = -1 } },
+	{ ClkTagBar,     0,          Button3, shiftview,      {.i = +1 } },
+	{ ClkTagBar,     0,          Button2, spawn,          {.v = dmenucmd } },
 };
