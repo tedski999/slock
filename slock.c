@@ -110,42 +110,40 @@ int main(int argc, char **argv) {
 
 	// prompt for password
 	XEvent ev;
-	char input[256];
-	int input_len = 0;
+	char buffer[256];
+	int buffer_len = 0;
 	int running = 1;
 	while (running && !XNextEvent(dpy, &ev)) {
 		if (ev.type == KeyPress) {
 			// read keyboard input
 			KeySym ksym;
-			char new_input[32];
-			int new_input_len = XLookupString(&ev.xkey, new_input, sizeof new_input, &ksym, 0);
+			char input[sizeof buffer];
+			int input_len = XLookupString(&ev.xkey, input, sizeof input, &ksym, 0);
 			// disregard special keys
-			if (IsFunctionKey(ksym) || IsKeypadKey(ksym) || IsMiscFunctionKey(ksym) || IsPFKey(ksym) || IsPrivateKeypadKey(ksym))
+			if (IsFunctionKey(ksym) || IsMiscFunctionKey(ksym) || IsPFKey(ksym) || IsPrivateKeypadKey(ksym))
 				continue;
 			// handle keys
 			switch (ksym) {
 				case XK_Return:
-					input[input_len] = '\0';
-					char *input_hash = crypt(input, hash);
-					if (input_hash)
-						running = strcmp(input_hash, hash);
-				case XK_Escape:
-					input_len = 0;
+					buffer[buffer_len] = '\0';
+					char *input_hash = crypt(buffer, hash);
+					running = !(input_hash && !strcmp(input_hash, hash));
+					buffer_len = 0;
 					break;
 				case XK_BackSpace:
-					input_len -= 1;
+					buffer_len -= (buffer_len > 0);
 					break;
 				default:
-					if (new_input_len && !iscntrl(new_input[0]) && input_len + new_input_len < sizeof input) {
-						memcpy(input + input_len, new_input, new_input_len);
-						input_len += new_input_len;
+					if (!iscntrl(input[0]) && buffer_len + input_len < sizeof buffer) {
+						memcpy(buffer + buffer_len, input, input_len);
+						buffer_len += input_len;
 					}
 			}
 			// draw input
 			for (int i = 0; i < windows_len; i++) {
 				XClearWindow(dpy, windows[i]);
 				GC gc = XCreateGC(dpy, windows[i], GCForeground, &(XGCValues) { .foreground = colors[i].pixel });
-				for (int j = 0; j < input_len; j++)
+				for (int j = 0; j < buffer_len; j++)
 					XFillRectangle(dpy, windows[i], gc, (1 + j * 3) * pixels, 1 * pixels, 2 * pixels, 2 * pixels);
 				XFreeGC(dpy, gc);
 			}
