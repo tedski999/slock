@@ -27,9 +27,6 @@ static void die(char *fmt, ...) {
 }
 
 int main(int argc, char **argv) {
-	if (argc > 1)
-		die("slock: no arguments expected\n");
-
 	Display *dpy = XOpenDisplay(NULL);
 	if (!dpy)
 		die("slock: cannot open display\n");
@@ -98,8 +95,18 @@ int main(int argc, char **argv) {
 		XMapRaised(dpy, windows[i]);
 		XSelectInput(dpy, root, SubstructureNotifyMask);
 	}
-
 	XSync(dpy, 0);
+
+	// run post-lock command
+	if (argc > 1) {
+		switch (fork()) {
+			case 0:
+				if (!close(ConnectionNumber(dpy)))
+					execvp(argv[1], argv + 1);
+			case -1:
+				die("slock: unable to execute post-lock command: %s\n", strerror(errno));
+		}
+	}
 
 	// prompt for password
 	XEvent ev;
