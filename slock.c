@@ -86,11 +86,17 @@ int main(int argc, char **argv) {
 		XAllocNamedColor(dpy, c, color, &colors[i], &(XColor) {0});
 		Cursor cursor = XCreatePixmapCursor(dpy, pmap, pmap, &colors[i], &colors[i], 0, 0);
 		XDefineCursor(dpy, windows[i], cursor);
-		// grab mouse pointer and keyboard
-		if (XGrabPointer(dpy, root, False, ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync, GrabModeAsync, None, cursor, CurrentTime) != GrabSuccess)
-			die("slock: unable to grab mouse pointer for screen %d\n", i);
-		if (XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime) != GrabSuccess)
-			die("slock: unable to grab keyboard for screen %d\n", i);
+		// grab mouse and keyboard
+		int ptgrab = -1, kbgrab = -1;
+		for (int attempts = 6; attempts >= 0 && (ptgrab != GrabSuccess || kbgrab != GrabSuccess); attempts++) {
+			if (ptgrab != GrabSuccess)
+				ptgrab = XGrabPointer(dpy, root, False, ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync, GrabModeAsync, None, cursor, CurrentTime);
+			if (kbgrab != GrabSuccess)
+				kbgrab = XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime);
+			if (attempts == 0 && (ptgrab != GrabSuccess || kbgrab != GrabSuccess))
+				die("slock: unable to grab inputs for screen %d\n", i);
+			usleep(100000);
+		}
 		// lock the screen
 		XMapRaised(dpy, windows[i]);
 		XSelectInput(dpy, root, SubstructureNotifyMask);
